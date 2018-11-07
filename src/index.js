@@ -6,7 +6,6 @@ function compile(files) {
 	files.forEach(fn => {
 		const file = fs.readFileSync(fn, 'utf-8');
 		try {
-			console.log(fn);
 			const out = parser.parse(file);
 			console.log(JSON.stringify(out, null, 4))
 		} catch(e) {

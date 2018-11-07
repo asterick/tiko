@@ -388,28 +388,23 @@ _
 	= (whitespace / comment)*
 
 wordbreak
-	= !(letter / digit)
+	= ![a-z0-9_]i
 
 whitespace
 	= [ \n\r\f\v\t]
 
-hex
-	= [0-9a-f]i
-
-digit
-	= [0-9]
-
-letter
-	= [a-z_]i
-
 name
-	= _ v:$(letter (letter / digit)*) !{ return RESERVED.indexOf(v) >= 0 }
+	= _ v:$([a-z_]i [a-z0-9_]i*) !{ return RESERVED.indexOf(v) >= 0 }
 		{ return { location: location, type: "Identifier", name: v }; }
 
 number
-	= _ "0x"i a:$hex* "." b:$hex* &{ return a.length || b.length }
+	= _ "0x"i a:$[0-9a-f]i* "." b:$[0-9a-f]i* &{ return a.length || b.length }
 		{ return parseInt(a+b, 16) / (1 << (4 * b.length)) }
-	/ _ v:$(a:digit* "." b:digit &{ return a.length || b.length } ("e"i [+\-]? digit+)?)
+	/ _ "0x"i a:$[0-9a-f]i+
+		{ return parseInt(a, 16) }
+	/ _ v:$(a:[0-9]* "." b:[0-9] &{ return a.length || b.length } ("e"i [+\-]? [0-9]+)?)
+		{ return parseFloat(v); }
+	/ _ v:$(a:[0-9]+ ("e"i [+\-]? [0-9]+)?)
 		{ return parseFloat(v); }
 
 string
