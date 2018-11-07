@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+'use strict';
+
+const path = require("path");
+const { version } = require(path.join(__dirname, "../package.json"));
+const { ArgumentParser } = require("argparse");
+
+const compiler = require("../src");
+
+const parser = new ArgumentParser({
+	description: 'Argparse example',
+	addHelp: true,
+	version
+});
+
+parser.addArgument(
+	'files',
+	{
+		help: "source files",
+		nargs: "+"
+	}
+);
+
+parser.addArgument(
+	['-o', '--target'],
+	{
+		help: "destination filename",
+		defaultValue: "pico.png"
+	}
+);
+
+parser.addArgument(
+	['-f', '--format'],
+	{
+		help: "desired output format",
+		choices: Object.keys(compiler.encoders),
+		defaultValue: "png"
+	}
+);
+
+const args = parser.parseArgs();
+console.log(args)
