@@ -22,10 +22,17 @@ parser.addArgument(
 );
 
 parser.addArgument(
+	['-r', '--run'],
+	{
+		help: "run after compiling",
+		nargs: 0
+	}
+);
+
+parser.addArgument(
 	['-o', '--target'],
 	{
-		help: "destination filename",
-		defaultValue: "pico.png"
+		help: "destination filename"
 	}
 );
 
@@ -39,4 +46,6 @@ parser.addArgument(
 );
 
 const args = parser.parseArgs();
-console.log(args)
+
+// Temporary code
+compiler.compile(args.files);
