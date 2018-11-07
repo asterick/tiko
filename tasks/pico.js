@@ -5,9 +5,6 @@ var compiler = require("../compiler"),
 const { spawn } = require('child_process');
 
 module.exports = function(grunt) {
-	// Please see the Grunt documentation for more information regarding task
-	// creation: http://gruntjs.com/creating-tasks
-
 	grunt.registerMultiTask('pico', 'Generates pico-8 games', function() {
 		var done = this.async();
 		var data = this.data;

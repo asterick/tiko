@@ -1,6 +1,7 @@
-var zlib = require("zlib"),
-	PNG = require("node-png").PNG,
-	fs = require("fs");
+const zlib = require("zlib"),
+	  path = require("path"),
+	  { PNG } = require("node-png"),
+	  fs = require("fs");
 
 const CHARACTER_SET = "\n 0123456789abcdefghijklmnopqrstuvwxyz!#%(){}[]<>+=/*:;.,~_";
 
@@ -47,7 +48,7 @@ function compress(string) {
 			}
 		}
 	}
-	
+
 	var encoded = [0x3a, 0x63, 0x3a, 0x00, string.length >> 8, string.length & 0xFF, 0x00, 0x00].concat(bytes);
 	return Buffer.from(encoded);
 }
@@ -59,7 +60,7 @@ function save(fn, runtime, payload, done) {
 	runtime = compress(runtime);
 
 	console.log("Runtime size:", runtime.length);
-	console.log("Payload size:", payload.length)
+	console.log("Payload size:", payload.length);
 
 	if (payload.length > 0x4300 || 
 		runtime.length > (0x8000 - 0x4300)) {
@@ -67,9 +68,6 @@ function save(fn, runtime, payload, done) {
 	}
 
 	// Map to the rom	
-	for (var i = 0; i < data.length; i++) {
-		data[i] = 0;
-	}
 	for (var i = 0; i < payload.length; i++) {
 		data[i] = payload[i];
 	}
@@ -79,7 +77,7 @@ function save(fn, runtime, payload, done) {
 
 	data[0x8000] = 4;
 
-	fs.createReadStream('./compiler/cartridge.png')
+	fs.createReadStream(path.join(__dirname, '/cartridge.png'))
 	    .pipe(new PNG({
 	        filterType: 4
 	    }))
