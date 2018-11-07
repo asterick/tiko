@@ -34,7 +34,7 @@ function inflate(index, base_tbl, ins_tbl, offs)
 
 	local function get_code(table)
 		local code = 0
-		for b=0, 0x.F, 0x.1 do
+		for b=0, 0x.f, 0x.1 do
 			code = code * 2 + bits(1)
 			local out = table[b + code]
 			if out then
@@ -61,14 +61,14 @@ function inflate(index, base_tbl, ins_tbl, offs)
 		local final, method = bits(1), bits(2)
 
 		if method == 1 then
-			-- These are special ones
+			-- these are special ones
 			base_tbl = def_tbl({}, 144, 8, 112, 9, 24, 7, 8, 8)
 			ins_tbl = def_tbl({}, 32, 5)
 		elseif method == 2 then
-			-- Create dynamic table
+			-- create dynamic table
 			base_tbl, ins_tbl, offs = 257 + bits(5), 1 + bits(5), {}
 
-			-- Create our code length table
+			-- create our code length table
 			for i=1, 4 + bits(4) do
 				offs[({ 17, 18, 19, 1, 9, 8, 10, 7, 11, 6, 12, 5, 13, 4, 14, 3, 15, 2, 16 })[i]] = bits(3)
 			end
