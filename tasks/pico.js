@@ -1,8 +1,7 @@
 'use strict';
-var compiler = require("../compiler"),
-	fs = require('fs');
-
-const { spawn } = require('child_process');
+const compiler = require("../compiler"),
+	  fs = require('fs'),
+	  { spawn } = require('child_process');
 
 module.exports = function(grunt) {
 	grunt.registerMultiTask('pico', 'Generates pico-8 games', function() {

@@ -24,7 +24,7 @@ module.exports = function(grunt) {
 				cartridge: "tiko.p8.png"
 			}
 		},
-		watch: {
+		"watch": {
 			pico: {
 				files: ["runtime/**/*", "runtime/main.lua"],
 				tasks: ["pico"]
