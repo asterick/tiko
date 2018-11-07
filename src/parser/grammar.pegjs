@@ -344,6 +344,10 @@ number
 		{ return parseInt(a+b, 16) / (1 << (4 * b.length)) }
 	/ _ "0x"i a:$[0-9a-f]i+
 		{ return parseInt(a, 16) }
+	/ _ "0b"i a:$[01]i* "." b:$[01]i* &{ return a.length || b.length }
+		{ return parseInt(a+b, 2) / (1 << b.length) }
+	/ _ "0b"i a:$[01]i+
+		{ return parseInt(a, 2) }
 	/ _ v:$(a:[0-9]* "." b:[0-9] &{ return a.length || b.length } ("e"i [+\-]? [0-9]+)?)
 		{ return parseFloat(v); }
 	/ _ v:$(a:[0-9]+ ("e"i [+\-]? [0-9]+)?)
