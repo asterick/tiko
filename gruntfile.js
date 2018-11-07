@@ -1,6 +1,6 @@
-const fs = require("fs");
-const zlib = require("zlib");
-const os = require("os");
+const fs = require("fs"),
+      zlib = require("zlib"),
+      os = require("os");
 
 function dest() {
 	switch (os.platform()) {
@@ -22,28 +22,22 @@ function payload() {
 
 module.exports = function(grunt) {
 	grunt.initConfig({
-		pico: {
-			tiko: {
-				header: [
-					"-- tiko",
-					"-- by: asterick",
-					"-- http://www.github.com/asterick/pico-tiko",
-				],
-
-				src: ["runtime/**/*", "runtime/main.lua"],
+		"pico": {
+			pico: {
+				src: ["runtime/main.lua", "runtime/**/*"],
 				dest: dest(),
 				payload: payload
 			}
 		},
 		"pico-run": {
-			tiko: {
+			pico: {
 				runtime: "/Applications/PICO-8.app/Contents/MacOS/pico8",
 				cartridge: dest()
 			}
 		},
 		watch: {
 			pico: {
-				files: ["runtime/**/*"],
+				files: ["runtime/**/*", "runtime/main.lua"],
 				tasks: ["pico"]
 			}
 		}

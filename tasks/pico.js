@@ -10,12 +10,11 @@ module.exports = function(grunt) {
 		var data = this.data;
 
 		this.files.forEach(function(f) {
-			var source = f.header.concat(
-				f.src.filter(function (filepath, i) {
+			var source = f.src.filter(function (filepath, i) {
 					return grunt.file.exists(filepath) && !grunt.file.isDir(filepath);	
 				}).map(function (fp) {
 					return grunt.file.read(fp);
-				})).join("\n");
+				}).join("\n");
 
 			compiler(f.dest, source, f.payload(), done)
 		});
