@@ -1,5 +1,5 @@
 /*
- Grammar for parsing pico-8 programs.
+ Grammar for parsing tico programs. (lua 5.1 dialect)
  */ 
 
 {
@@ -88,7 +88,22 @@ label_statement
 assignment_statement
 	= vars:variable_list _ "=" exps:expression_list
 		{ return { location: location, type:"AssignmentStatement", variables: vars, expressions: exps }; }
-	/ modify_assignment
+	/ v:variable _ o:("+=" / "-=" / "*=" / "%=" / "/=") e:expression
+		{
+			return { 
+				location: location, 
+				type:  "AssignmentStatement",
+				variables: [v], 
+				expressions: [
+					{ 
+						type: assignmentTypes[o],
+						left: v,
+						right: e,
+						location: location
+					}
+				] 
+			}
+		}
 
 break_statement
 	= _ "break" wordbreak
@@ -113,7 +128,6 @@ repeat_statement
 if_statement
 	= i:if_block elf:elseif_block* el:else_block? _ "end" wordbreak
 		{ return { location: location, type: "IfStatement", if_clause: i, elseif_clauses: elf, else_clause: el } }
-	/ if_shortcut
 
 for_statement
 	= _ "for" wordbreak v:name _ "=" s:expression _ "," e:expression i:(_ "," i:expression { return i; })? b:do_statement
@@ -145,76 +159,6 @@ elseif_block
 else_block
 	= _ "else" wordbreak b:block 
 		{ return { location: location, type: "ElseClause", body: b } }
-
-/* These are pico-8 shortcuts */
-statement_shortcut
-	= _ ";"
-		{ return { location: location, type:"NullStatement" }; }
-	/ assignment_statement
-	/ function_call
-	/ label_statement
-	/ break_statement
-	/ goto_statement
-	/ do_statement
-	/ while_statement
-	/ repeat_statement
-	/ if_statement
-	/ for_statement
-	/ for_in_statement
-	/ function_statement
-	/ local_statement
-	/ return_no_break
-
-return_argument
-	= !assignment_statement e:expression_list { return e; }
-
-return_argument_no_break
-	= &(y:$return_argument  !{ return /\n|\r/.test(y) }) x:return_argument { return x; }
-
-return_no_break
-	= _ "return" wordbreak e:return_argument_no_break?
-		{ return { location: location, type:"ReturnStatement", value: e }; }
-
-statement_no_break
-	= &(y:$statement_shortcut !{ return /\n|\r/.test(y) }) x:statement_shortcut { return x; }
-
-if_shortcut
-	= _ "if" wordbreak exp:expression states:statement_no_break+ 
-		{
-			return { 
-				location: location,
-				type: "IfStatement", 
-				if_clause: { location: location, type: "IfClause", condition: exp, body: states }, 
-				elseif_clauses: [], 
-				else_clause: null 
-			} 
-		}
-
-modify_assignment
-	= v:variable _ o:("+=" / "-=" / "*=" / "%=" / "/=") e:expression
-		{
-			return { 
-				location: location, 
-				type:  "AssignmentStatement",
-				variables: [v], 
-				expressions: [
-					{ 
-						type: assignmentTypes[o],
-						left: v,
-						right: e,
-						location: location
-					}
-				] 
-			}; 
-		}
-	/ v:variable _ "-=" e:expression
-		{ return { location: location, type:"SubtractAssignmentStatement", variable: v, expression: e }; }
-	/ v:variable _ "*=" e:expression
-		{ return { location: location, type:"MultiplyAssignmentStatement", variable: v, expression: e }; }
-	/ v:variable _ "/=" e:expression
-		{ return { location: location, type:"DivideAssignmentStatement", variable: v, expression: e }; }
-	/ v:variable _ "%=" e:expression
-		{ return { location: location, type:"ModuloAssignmentStatement", variable: v, expression: e }; }
 
 /* Lists */
 variable_list
@@ -297,7 +241,7 @@ top_expression
 		{ return { location: location, type: "RestArgument" }; }
 	/ v:number
 		{ return { location: location, type: "NumberConstant", value: v }; }
-	/ v:string 
+	/ v:string
 		{ return { location: location, type: "StringConstant", value: v }; }
 	/ v:function_definition
 		{ return { location: location, type: "LambdaFunction", value: v }; }
@@ -327,7 +271,6 @@ call_expression
 modifier_expression
 	= index_expression
 	/ call_expression
-
 
 prefix_expression
 	= base:base_expression e:modifier_expression*
