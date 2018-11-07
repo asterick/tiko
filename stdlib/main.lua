@@ -1,3 +1,3 @@
 function _init()
-	inflate(0)
+	inflate(a.b.c[1])
 end

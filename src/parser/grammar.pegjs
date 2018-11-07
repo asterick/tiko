@@ -286,7 +286,6 @@ power_expression
 		{ return { location: location, type: binaryOperatorTypes[t], left:a, right: b }; }
 	/ top_expression
 
-
 top_expression
 	= _ "nil" wordbreak
 		{ return { location: location, type: "NilConstant" }; }
@@ -303,7 +302,7 @@ top_expression
 	/ v:function_definition
 		{ return { location: location, type: "LambdaFunction", value: v }; }
 	/ table_constructor
-	/ prefix_expression 
+	/ prefix_expression
 
 index_expression
 	= _ "." n:name
