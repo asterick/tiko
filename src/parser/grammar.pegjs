@@ -1,13 +1,14 @@
 /*
- Grammar for parsing tico programs. (lua 5.1 dialect)
+ Grammar for parsing tico programs. (a lua 5.1 dialect)
  */ 
 
 {
 	const RESERVED = [
 		"and", "break", "do", "else", "elseif", "end", 
-		"false", "for", "function", "goto", "if", "in", 
+		"false", "for", "virtual", "function", "goto", 
 		"local", "nil", "not", "or", "repeat", "return", 
-		"then", "true", "until", "while"
+		"then", "true", "until", "while", "if", "in",
+		"using", "as"
 	];
 
 	const assignmentTypes = {
@@ -52,8 +53,8 @@
 }
 
 chunk
-	= b:block _
-		{ return b; }
+	= block:block _
+		{ return block; }
 
 block
 	= statements:statement*
@@ -61,7 +62,7 @@ block
 /* Statements */
 statement
 	= _ ";"
-		{ return { location: location, type:"NullStatement" }; }
+		{ return { location, type: "NullStatement" }; }
 	/ assignment_statement
 	/ function_call
 	/ label_statement
@@ -76,22 +77,24 @@ statement
 	/ function_statement
 	/ local_statement
 	/ return_statement
+	/ using_statement
 
 return_statement
-	= _ "return" wordbreak e:(!assignment_statement e:expression_list { return e; })?
-		{ return { location: location, type:"ReturnStatement", value: e }; }
+	= _ "return" wordbreak value:(!assignment_statement e:expression_list { return e; })?
+		{ return { location, type:"ReturnStatement", value }; }
 
 label_statement
-	= _ "::" n:name _ "::"
-		{ return { location: location, type:"LabelStatement", label: n }; }
+	= _ "::" label:name _ "::"
+		{ return { location, type:"LabelStatement", label }; }
 
 assignment_statement
-	= vars:variable_list _ "=" exps:expression_list
-		{ return { location: location, type:"AssignmentStatement", variables: vars, expressions: exps }; }
+	= variables:variable_list _ "=" expressions:expression_list
+		{ return { location, type:"AssignmentStatement", variables, expressions }; }
+
 	/ v:variable _ o:("+=" / "-=" / "*=" / "%=" / "/=") e:expression
 		{
 			return { 
-				location: location, 
+				location, 
 				type:  "AssignmentStatement",
 				variables: [v], 
 				expressions: [
@@ -99,7 +102,7 @@ assignment_statement
 						type: assignmentTypes[o],
 						left: v,
 						right: e,
-						location: location
+						location
 					}
 				] 
 			}
@@ -107,58 +110,62 @@ assignment_statement
 
 break_statement
 	= _ "break" wordbreak
-		{ return { location: location, type:"BreakStatement" }; }
+		{ return { location, type:"BreakStatement" }; }
 
 goto_statement
-	= _ "goto" wordbreak n:name
-		{ return { location: location, type:"GotoStatement", label: n }; }
+	= _ "goto" wordbreak label:name
+		{ return { location, type:"GotoStatement", label }; }
 
 do_statement
-	= _ "do" wordbreak b:block _ "end" wordbreak
-		{ return { location: location, type:"BlockStatement", body: b }; }
+	= _ "do" wordbreak body:block _ "end" wordbreak
+		{ return { location, type:"BlockStatement", body }; }
 
 while_statement
-	= _ "while" wordbreak e:expression b:do_statement
-		{ return { location: location, type:"WhileStatement", condition: e, body: b }; }
+	= _ "while" wordbreak condition:expression body:do_statement
+		{ return { location, type:"WhileStatement", condition, body }; }
 
 repeat_statement
-	= _ "repeat" wordbreak b:block _ "until" wordbreak e:expression
-		{ return { location: location, type:"RepeatStatement", condition: e, body: b }; }
+	= _ "repeat" wordbreak body:block _ "until" wordbreak condition:expression
+		{ return { location, type:"RepeatStatement", condition, body }; }
 
 if_statement
-	= i:if_block elf:elseif_block* el:else_block? _ "end" wordbreak
-		{ return { location: location, type: "IfStatement", if_clause: i, elseif_clauses: elf, else_clause: el } }
+	= if_clause:if_block elseif_clauses:elseif_block* else_clause:else_block? _ "end" wordbreak
+		{ return { location, type: "IfStatement", if_clause, elseif_clauses, else_clause } }
 
 for_statement
 	= _ "for" wordbreak v:name _ "=" s:expression _ "," e:expression i:(_ "," i:expression { return i; })? b:do_statement
-		{ return { location: location, type: "ForStatement", name: v, start: s, end: e, increment: i, body: b }; }
+		{ return { location, type: "ForStatement", name: v, start: s, end: e, increment: i, body: b }; }
 
 for_in_statement
 	= _ "for" wordbreak n:name_list _ "in" wordbreak e:expression_list b:do_statement
-		{ return { location: location, type: "ForInStatement", names: n, values: e, body: b }; }
+		{ return { location, type: "ForInStatement", names: n, values: e, body: b }; }
 
 function_statement
-	= _ "function" wordbreak name:function_name body:function_body
-		{ return { location: location, type: "FunctionDeclaration", name: name, body: body }; }
-	/ _ "local" wordbreak _ "function" wordbreak name:name body:function_body
-		{ return { location: location, type: "LocalFunctionDeclaration", name: name, body: body }; }
+	= native:call_space wordbreak name:function_name body:function_body
+		{ return { location, type: "FunctionDeclaration", native, name: name, body: body }; }
+	/ _ "local" wordbreak native:call_space name:name body:function_body
+		{ return { location, type: "LocalFunctionDeclaration", native, name: name, body: body }; }
 
 local_statement
 	= _ "local" wordbreak names:name_list exp:(_ "=" e:expression_list { return e; })?
-		{ return { location: location, type: "LocalDeclaration", variables: names, expressions: exp }; }
+		{ return { location, type: "LocalDeclaration", variables: names, expressions: exp }; }
+
+using_statement
+	= _ "using" wordbreak module:(name / string) name:(_ "as" wordbreak name:name { return name })?
+		{ return { location, type: "UsingDeclaration", module, name } }
 
 /* Blocks */
 if_block
 	= _ "if" wordbreak condition:expression _ "then" wordbreak b:block 
-		{ return { location: location, type: "IfClause", condition: condition, body: b } }
+		{ return { location, type: "IfClause", condition: condition, body: b } }
 
 elseif_block
 	= _ "elseif" wordbreak condition:expression _ "then" wordbreak b:block 
-		{ return { location: location, type: "ElseIfClause", condition: condition, body: b } }
+		{ return { location, type: "ElseIfClause", condition: condition, body: b } }
 
 else_block
 	= _ "else" wordbreak b:block 
-		{ return { location: location, type: "ElseClause", body: b } }
+		{ return { location, type: "ElseClause", body: b } }
 
 /* Lists */
 variable_list
@@ -174,10 +181,10 @@ expression_list
 		{ return [a].concat(b); }
 
 parameter_list
-	= params:name_list rest:(_ "," _ rest:"..." { return rest; })?
-		{ return { location: location, type:"ParameterList", rest: Boolean(rest), parameters: params }; }
+	= params:name_list rest:(_ "," _ rest:"...")?
+		{ return { location, type:"ParameterList", rest: Boolean(rest), parameters: params }; }
 	/ _ "..."
-		{ return { location: location, type:"ParameterList", rest: true, parameters: [] }; }
+		{ return { location, type:"ParameterList", rest: true, parameters: [] }; }
 
 field_list
 	= a:field b:(field_seperator c:field { return c; })* field_seperator?
@@ -191,68 +198,68 @@ expression
 	= or_expression
 
 or_expression
-	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location: location, type: binaryOperatorTypes[t], right: b } })+
+	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ and_expression
 
 and_expression
-	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location: location, type: binaryOperatorTypes[t], right: b } })+
+	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ compare_expression
 
 compare_expression
-	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location: location, type: binaryOperatorTypes[t], right: b } })+
+	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ concat_expression
 
 concat_expression
 	= a:add_expression _ t:".." b:concat_expression
-		{ return { location: location, type: binaryOperatorTypes[t], left:a, right: b }; }
+		{ return { location, type: binaryOperatorTypes[t], left:a, right: b }; }
 	/ add_expression
 
 add_expression
-	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location: location, type: binaryOperatorTypes[t], right: b } })+
+	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ multiply_expression
 
 multiply_expression
-	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location: location, type: binaryOperatorTypes[t], right: b } })+
+	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ unary_expression
 
 unary_expression
 	= _ t:("#" / "-" / $("not" wordbreak)) a:unary_expression
-		{ return { location: location, type: unaryOperatorTypes[t], expression:a }; }
+		{ return { location, type: unaryOperatorTypes[t], expression:a }; }
 	/ power_expression
 
 power_expression
 	= a:top_expression _ t:"^" b:power_expression
-		{ return { location: location, type: binaryOperatorTypes[t], left:a, right: b }; }
+		{ return { location, type: binaryOperatorTypes[t], left:a, right: b }; }
 	/ top_expression
 
 top_expression
 	= _ "nil" wordbreak
-		{ return { location: location, type: "NilConstant" }; }
+		{ return { location, type: "NilConstant" }; }
 	/ _ "false" wordbreak
-		{ return { location: location, value: false, type: "BooleanConstant" }; }
+		{ return { location, value: false, type: "BooleanConstant" }; }
 	/ _ "true" wordbreak
-		{ return { location: location, value: true, type: "BooleanConstant" }; }
+		{ return { location, value: true, type: "BooleanConstant" }; }
 	/ _ "..."
-		{ return { location: location, type: "RestArgument" }; }
+		{ return { location, type: "RestArgument" }; }
 	/ v:number
-		{ return { location: location, type: "NumberConstant", value: v }; }
+		{ return { location, type: "NumberConstant", value: v }; }
 	/ v:string
-		{ return { location: location, type: "StringConstant", value: v }; }
+		{ return { location, type: "StringConstant", value: v }; }
 	/ v:function_definition
-		{ return { location: location, type: "LambdaFunction", value: v }; }
+		{ return { location, type: "LambdaFunction", value: v }; }
 	/ table_constructor
 	/ prefix_expression
 
 index_expression
 	= _ "." n:name
-		{ return { location: location, type: "PropertyIndex", name:n } }
+		{ return { location, type: "PropertyIndex", name:n } }
 	/ _ "[" e:expression _ "]"
-		{ return { location: location, type: "ExpressionIndex", value:e } }
+		{ return { location, type: "ExpressionIndex", value:e } }
 
 group_expression
 	= _ "(" exp:expression _ ")"
@@ -264,9 +271,9 @@ base_expression
 
 call_expression
 	= a:arguments
-		{ return { location: location, type: "FunctionCall", arguments:a } }
+		{ return { location, type: "FunctionCall", arguments:a } }
 	/ _ ":" n:name a:arguments
-		{ return { location: location, type: "PropertyCall", name:n, arguments:a } }
+		{ return { location, type: "PropertyCall", name:n, arguments:a } }
 
 modifier_expression
 	= index_expression
@@ -279,7 +286,7 @@ prefix_expression
 variable
 	= base:base_expression e:(e:modifier_expression &modifier_expression { return e; })* i:index_expression
 		{ return associate("expression", [base].concat(e).concat(i)); }
-	/ n:name
+	/ name
 
 function_call
 	= base:base_expression e:(e:modifier_expression &modifier_expression { return e; })* c:call_expression
@@ -289,22 +296,26 @@ function_call
 /* Atomic types */
 field
 	= _ "[" k:expression _ "]" _ "=" v:expression
-		{ return { location: location, type: "ExpressionField", key: k, value: v }; }
+		{ return { location, type: "ExpressionField", key: k, value: v }; }
 	/ n:name _ "=" v:expression
-		{ return { location: location, type: "IdentifierField", name: n, value: v }; }
+		{ return { location, type: "IdentifierField", name: n, value: v }; }
 	/ v:expression
-		{ return { location: location, type: "ValueField", value: v }; }
+		{ return { location, type: "ValueField", value: v }; }
+
+call_space
+	= _ "function" wordbreak { return true }
+	/ _ "virtual" wordbreak { return false }
 
 function_definition
-	= _ "function" wordbreak body:function_body
-		{ return { location: location, type: "LambdaFunctionDeclaration", body: body }; }
+	= native:call_space body:function_body
+		{ return { location, type: "LambdaFunctionDeclaration", native, body }; }
 
 function_name
 	= a:name b:(_ "." b:name { return b; })* c:(_ ":" c:name { return c; })?
 		{ 
 			var names = [a].concat(b);
 			return { 
-				location: location, type: "FunctionName", 
+				location, type: "FunctionName", 
 				names: c ? names.concat(c) : names, 
 				self: Boolean(c)
 			}; 
@@ -312,32 +323,29 @@ function_name
 
 function_body
 	= _ "(" params:parameter_list? _ ")" body:block _ "end" wordbreak
-		{ return { location: location, type: "FunctionBody", parameters: params, body: body }; }
+		{ return { location, type: "FunctionBody", parameters: params, body: body }; }
 
 arguments
 	= _ "(" l:expression_list? _ ")"
 		{ return l; }
 	/ string
-		{ return { location: location, type: "StringConstant", value: v }; }
+		{ return { location, type: "StringConstant", value: v }; }
 	/ table_constructor
 
 table_constructor
 	= _ "{" f:field_list? _ "}"
-		{ return { location: location, type: "TableConstructor", fields: f }; }
+		{ return { location, type: "TableConstructor", fields: f }; }
 
 /* These are helpers */
 _
-	= (whitespace / comment)*
+	= ([ \n\r\f\v\t] / comment)*
 
 wordbreak
 	= ![a-z0-9_]i
 
-whitespace
-	= [ \n\r\f\v\t]
-
 name
 	= _ v:$([a-z_]i [a-z0-9_]i*) !{ return RESERVED.indexOf(v) >= 0 }
-		{ return { location: location, type: "Identifier", name: v }; }
+		{ return { location, type: "Identifier", name: v }; }
 
 number
 	= _ "0x"i a:$[0-9a-f]i* "." b:$[0-9a-f]i* &{ return a.length || b.length }
