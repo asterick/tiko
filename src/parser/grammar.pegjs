@@ -133,8 +133,8 @@ if_statement
 		{ return { location, type: "IfStatement", if_clause, elseif_clauses, else_clause } }
 
 for_statement
-	= _ "for" wordbreak v:name _ "=" s:expression _ "," e:expression i:(_ "," i:expression { return i; })? b:do_statement
-		{ return { location, type: "ForStatement", name: v, start: s, end: e, increment: i, body: b }; }
+	= _ "for" wordbreak name:name _ "=" start:expression _ "," end:expression increment:(_ "," i:expression { return i; })? body:do_statement
+		{ return { location, type: "ForStatement", name, start, end, increment, body }; }
 
 for_in_statement
 	= _ "for" wordbreak n:name_list _ "in" wordbreak e:expression_list b:do_statement
