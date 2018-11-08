@@ -136,10 +136,10 @@ for_in_statement
 		{ return { location, type: "ForInStatement", names, values, body }; }
 
 function_statement
-	= native:call_space wordbreak name:function_name body:function_body
-		{ return { location, type: "FunctionDeclaration", native, name, body }; }
-	/ _ "local" wordbreak native:call_space name:name body:function_body
-		{ return { location, type: "LocalFunctionDeclaration", native, name, body }; }
+	= options:call_space wordbreak name:function_name body:function_body
+		{ return { location, type: "FunctionDeclaration", name, body,  ... options }; }
+	/ _ "local" wordbreak options:call_space name:name body:function_body
+		{ return { location, type: "LocalFunctionDeclaration", name, body, ... options }; }
 
 local_statement
 	= _ "local" wordbreak variables:name_list expressions:(_ "=" e:expression_list { return e; })?
@@ -298,14 +298,12 @@ field
 		{ return { location, type: "ValueField", value }; }
 
 call_space
-	= _ "function" wordbreak
-		{ return true }
-	/ _ "virtual" wordbreak
-		{ return false }
+	= virtual:(_ "virtual" wordbreak)? _ "function" wordbreak
+		{ return { virtual: Boolean(virtual) } }
 
 function_definition
-	= native:call_space body:function_body
-		{ return { location, type: "LambdaFunctionDeclaration", native, body }; }
+	= options:call_space body:function_body
+		{ return { location, type: "LambdaFunctionDeclaration", body, ... options }; }
 
 function_name
 	= a:name b:(_ "." b:name { return b; })* c:(_ ":" c:name { return c; })?
