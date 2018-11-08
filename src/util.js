@@ -29,7 +29,7 @@ function formatError(file, e) {
 			last = end.column-1;
 		}
 
-		console.log(text.slice(0, first) + colors.inverse(text.slice(first, last)) + text.slice(last) );
+		console.log(text.slice(0, first) + colors.bgRed(text.slice(first, last)) + text.slice(last) );
 	}
 }
 
