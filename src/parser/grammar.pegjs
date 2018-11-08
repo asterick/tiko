@@ -137,18 +137,18 @@ for_statement
 		{ return { location, type: "ForStatement", name, start, end, increment, body }; }
 
 for_in_statement
-	= _ "for" wordbreak n:name_list _ "in" wordbreak e:expression_list b:do_statement
-		{ return { location, type: "ForInStatement", names: n, values: e, body: b }; }
+	= _ "for" wordbreak names:name_list _ "in" wordbreak values:expression_list body:do_statement
+		{ return { location, type: "ForInStatement", names, values, body }; }
 
 function_statement
 	= native:call_space wordbreak name:function_name body:function_body
-		{ return { location, type: "FunctionDeclaration", native, name: name, body: body }; }
+		{ return { location, type: "FunctionDeclaration", native, name, body }; }
 	/ _ "local" wordbreak native:call_space name:name body:function_body
-		{ return { location, type: "LocalFunctionDeclaration", native, name: name, body: body }; }
+		{ return { location, type: "LocalFunctionDeclaration", native, name, body }; }
 
 local_statement
-	= _ "local" wordbreak names:name_list exp:(_ "=" e:expression_list { return e; })?
-		{ return { location, type: "LocalDeclaration", variables: names, expressions: exp }; }
+	= _ "local" wordbreak variables:name_list expressions:(_ "=" e:expression_list { return e; })?
+		{ return { location, type: "LocalDeclaration", variables, expressions }; }
 
 using_statement
 	= _ "using" wordbreak module:(name / string) name:(_ "as" wordbreak name:name { return name })?
@@ -156,16 +156,16 @@ using_statement
 
 /* Blocks */
 if_block
-	= _ "if" wordbreak condition:expression _ "then" wordbreak b:block 
-		{ return { location, type: "IfClause", condition: condition, body: b } }
+	= _ "if" wordbreak condition:expression _ "then" wordbreak body:block 
+		{ return { location, type: "IfClause", condition, body } }
 
 elseif_block
-	= _ "elseif" wordbreak condition:expression _ "then" wordbreak b:block 
-		{ return { location, type: "ElseIfClause", condition: condition, body: b } }
+	= _ "elseif" wordbreak condition:expression _ "then" wordbreak body:block 
+		{ return { location, type: "ElseIfClause", condition, body } }
 
 else_block
-	= _ "else" wordbreak b:block 
-		{ return { location, type: "ElseClause", body: b } }
+	= _ "else" wordbreak body:block 
+		{ return { location, type: "ElseClause", body } }
 
 /* Lists */
 variable_list
@@ -181,8 +181,8 @@ expression_list
 		{ return [a].concat(b); }
 
 parameter_list
-	= params:name_list rest:(_ "," _ rest:"...")?
-		{ return { location, type:"ParameterList", rest: Boolean(rest), parameters: params }; }
+	= parameters:name_list rest:(_ "," _ rest:"...")?
+		{ return { location, type:"ParameterList", rest: Boolean(rest), parameters }; }
 	/ _ "..."
 		{ return { location, type:"ParameterList", rest: true, parameters: [] }; }
 
@@ -213,8 +213,8 @@ compare_expression
 	/ concat_expression
 
 concat_expression
-	= a:add_expression _ t:".." b:concat_expression
-		{ return { location, type: binaryOperatorTypes[t], left:a, right: b }; }
+	= left:add_expression _ t:".." right:concat_expression
+		{ return { location, type: binaryOperatorTypes[t], left, right }; }
 	/ add_expression
 
 add_expression
@@ -228,13 +228,13 @@ multiply_expression
 	/ unary_expression
 
 unary_expression
-	= _ t:("#" / "-" / $("not" wordbreak)) a:unary_expression
-		{ return { location, type: unaryOperatorTypes[t], expression:a }; }
+	= _ t:("#" / "-" / $("not" wordbreak)) expression:unary_expression
+		{ return { location, type: unaryOperatorTypes[t], expression }; }
 	/ power_expression
 
 power_expression
-	= a:top_expression _ t:"^" b:power_expression
-		{ return { location, type: binaryOperatorTypes[t], left:a, right: b }; }
+	= left:top_expression _ t:"^" right:power_expression
+		{ return { location, type: binaryOperatorTypes[t], left, right }; }
 	/ top_expression
 
 top_expression
@@ -246,34 +246,34 @@ top_expression
 		{ return { location, value: true, type: "BooleanConstant" }; }
 	/ _ "..."
 		{ return { location, type: "RestArgument" }; }
-	/ v:number
-		{ return { location, type: "NumberConstant", value: v }; }
-	/ v:string
-		{ return { location, type: "StringConstant", value: v }; }
-	/ v:function_definition
-		{ return { location, type: "LambdaFunction", value: v }; }
+	/ value:number
+		{ return { location, type: "NumberConstant", value }; }
+	/ value:string
+		{ return { location, type: "StringConstant", value }; }
+	/ value:function_definition
+		{ return { location, type: "LambdaFunction", value }; }
 	/ table_constructor
 	/ prefix_expression
 
 index_expression
-	= _ "." n:name
-		{ return { location, type: "PropertyIndex", name:n } }
-	/ _ "[" e:expression _ "]"
-		{ return { location, type: "ExpressionIndex", value:e } }
+	= _ "." name:name
+		{ return { location, type: "PropertyIndex", name } }
+	/ _ "[" value:expression _ "]"
+		{ return { location, type: "ExpressionIndex", value } }
 
 group_expression
-	= _ "(" exp:expression _ ")"
-		{ return exp; }
+	= _ "(" expression:expression _ ")"
+		{ return expression; }
 
 base_expression
-	= n:name
+	= name
 	/ group_expression
 
 call_expression
 	= a:arguments
 		{ return { location, type: "FunctionCall", arguments:a } }
-	/ _ ":" n:name a:arguments
-		{ return { location, type: "PropertyCall", name:n, arguments:a } }
+	/ _ ":" name:name a:arguments
+		{ return { location, type: "PropertyCall", name, arguments:a } }
 
 modifier_expression
 	= index_expression
@@ -295,12 +295,12 @@ function_call
 
 /* Atomic types */
 field
-	= _ "[" k:expression _ "]" _ "=" v:expression
-		{ return { location, type: "ExpressionField", key: k, value: v }; }
-	/ n:name _ "=" v:expression
-		{ return { location, type: "IdentifierField", name: n, value: v }; }
-	/ v:expression
-		{ return { location, type: "ValueField", value: v }; }
+	= _ "[" key:expression _ "]" _ "=" value:expression
+		{ return { location, type: "ExpressionField", key, value }; }
+	/ name:name _ "=" value:expression
+		{ return { location, type: "IdentifierField", name, value }; }
+	/ value:expression
+		{ return { location, type: "ValueField", value }; }
 
 call_space
 	= _ "function" wordbreak { return true }
@@ -322,19 +322,18 @@ function_name
 		}
 
 function_body
-	= _ "(" params:parameter_list? _ ")" body:block _ "end" wordbreak
-		{ return { location, type: "FunctionBody", parameters: params, body: body }; }
+	= _ "(" parameters:parameter_list? _ ")" body:block _ "end" wordbreak
+		{ return { location, type: "FunctionBody", parameters, body }; }
 
 arguments
 	= _ "(" l:expression_list? _ ")"
 		{ return l; }
 	/ string
-		{ return { location, type: "StringConstant", value: v }; }
 	/ table_constructor
 
 table_constructor
-	= _ "{" f:field_list? _ "}"
-		{ return { location, type: "TableConstructor", fields: f }; }
+	= _ "{" fields:field_list? _ "}"
+		{ return { location, type: "TableConstructor", fields }; }
 
 /* These are helpers */
 _
@@ -362,6 +361,11 @@ number
 		{ return parseFloat(v); }
 
 string
+	= value:string_literal
+		{ return { location, type: "StringConstant", value }; }
+
+
+string_literal
 	= _ v:multiline
 		{ return v; }
 	/ _ '"' v:(!'"' c:escaped_char { return c })* '"'
