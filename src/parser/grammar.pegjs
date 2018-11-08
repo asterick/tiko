@@ -5,10 +5,10 @@
 {
 	const RESERVED = [
 		"and", "break", "do", "else", "elseif", "end", 
-		"false", "for", "virtual", "function", "goto", 
-		"local", "nil", "not", "or", "repeat", "return", 
-		"then", "true", "until", "while", "if", "in",
-		"using", "as"
+		"false", "for", "function", "goto", "local", "nil", 
+		"not", "or", "repeat", "return", "then", "true", 
+		"until", "while", "if", "in",
+		"inline", "virtual", "using", "as"
 	];
 
 	const ASSIGNMENT_TYPES = {
@@ -136,10 +136,8 @@ for_in_statement
 		{ return { location, type: "ForInStatement", names, values, body }; }
 
 function_statement
-	= options:call_space wordbreak name:function_name body:function_body
+	= options:call_options _ "function" wordbreak wordbreak name:function_name body:function_body
 		{ return { location, type: "FunctionDeclaration", name, body,  ... options }; }
-	/ _ "local" wordbreak options:call_space name:name body:function_body
-		{ return { location, type: "LocalFunctionDeclaration", name, body, ... options }; }
 
 local_statement
 	= _ "local" wordbreak variables:name_list expressions:(_ "=" e:expression_list { return e; })?
@@ -297,12 +295,20 @@ field
 	/ value:expression
 		{ return { location, type: "ValueField", value }; }
 
-call_space
-	= virtual:(_ "virtual" wordbreak)? _ "function" wordbreak
-		{ return { virtual: Boolean(virtual) } }
+call_option
+	= _ "virtual" wordbreak
+		{ return { virtual: true } }
+	/ _ "inline" wordbreak
+		{ return { inline: true } }
+	/ _ "local" wordbreak
+		{ return { local: true } }
+
+call_options
+	= options:call_option*
+		{ return options.reduce((acc, opt) => Object.assign(acc, opt), {}) }
 
 function_definition
-	= options:call_space body:function_body
+	= options:call_options _ "function" wordbreak body:function_body
 		{ return { location, type: "LambdaFunctionDeclaration", body, ... options }; }
 
 function_name
