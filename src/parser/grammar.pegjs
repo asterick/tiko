@@ -11,7 +11,7 @@
 		"using", "as"
 	];
 
-	const assignmentTypes = {
+	const ASSIGNMENT_TYPES = {
 		"+=": "AddOperator",
 		"-=": "SubtractOperator",
 		"*=": "MultiplyOperator",
@@ -19,7 +19,7 @@
 		"%=": "ModuloOperator"
 	};
 
-	const binaryOperatorTypes = {
+	const BINARY_OPERATOR_TYPES = {
 		"or": "LogicalOrOperator",
 		"and": "LogicalAndOperator",
 		"<": "LessThanCompareOperator",
@@ -38,7 +38,7 @@
 		"^": "PowerOperator"
 	};
 
-	const unaryOperatorTypes = {
+	const UNARY_OPERATOR_TYPES = {
 		"not": "LogicalNotOperator",
 		"#": "LengthOperator",
 		"-": "NegateOperator",
@@ -91,20 +91,15 @@ assignment_statement
 	= variables:variable_list _ "=" expressions:expression_list
 		{ return { location, type:"AssignmentStatement", variables, expressions }; }
 
-	/ v:variable _ o:("+=" / "-=" / "*=" / "%=" / "/=") e:expression
+	/ left:variable _ o:("+=" / "-=" / "*=" / "%=" / "/=") right:expression
 		{
 			return { 
 				location, 
 				type:  "AssignmentStatement",
-				variables: [v], 
+				variables: [left], 
 				expressions: [
-					{ 
-						type: assignmentTypes[o],
-						left: v,
-						right: e,
-						location
-					}
-				] 
+					{ type: ASSIGNMENT_TYPES[o], left, right, location }
+				]
 			}
 		}
 
@@ -198,43 +193,43 @@ expression
 	= or_expression
 
 or_expression
-	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
+	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ and_expression
 
 and_expression
-	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
+	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ compare_expression
 
 compare_expression
-	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
+	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ concat_expression
 
 concat_expression
 	= left:add_expression _ t:".." right:concat_expression
-		{ return { location, type: binaryOperatorTypes[t], left, right }; }
+		{ return { location, type: BINARY_OPERATOR_TYPES[t], left, right }; }
 	/ add_expression
 
 add_expression
-	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
+	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ multiply_expression
 
 multiply_expression
-	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location, type: binaryOperatorTypes[t], right: b } })+
+	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ unary_expression
 
 unary_expression
 	= _ t:("#" / "-" / $("not" wordbreak)) expression:unary_expression
-		{ return { location, type: unaryOperatorTypes[t], expression }; }
+		{ return { location, type: UNARY_OPERATOR_TYPES[t], expression }; }
 	/ power_expression
 
 power_expression
 	= left:top_expression _ t:"^" right:power_expression
-		{ return { location, type: binaryOperatorTypes[t], left, right }; }
+		{ return { location, type: BINARY_OPERATOR_TYPES[t], left, right }; }
 	/ top_expression
 
 top_expression
@@ -303,8 +298,10 @@ field
 		{ return { location, type: "ValueField", value }; }
 
 call_space
-	= _ "function" wordbreak { return true }
-	/ _ "virtual" wordbreak { return false }
+	= _ "function" wordbreak
+		{ return true }
+	/ _ "virtual" wordbreak
+		{ return false }
 
 function_definition
 	= native:call_space body:function_body
