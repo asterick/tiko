@@ -343,8 +343,8 @@ wordbreak
 	= ![a-z0-9_]i
 
 name
-	= _ v:$([a-z_]i [a-z0-9_]i*) !{ return RESERVED.indexOf(v) >= 0 }
-		{ return { location, type: "Identifier", name: v }; }
+	= _ name:$([a-z_]i [a-z0-9_]i*) !{ return RESERVED.indexOf(name) >= 0 }
+		{ return { location, type: "Identifier", name }; }
 
 number
 	= _ "0x"i a:$[0-9a-f]i* "." b:$[0-9a-f]i* &{ return a.length || b.length }
