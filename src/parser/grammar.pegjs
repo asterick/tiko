@@ -63,6 +63,7 @@ block
 statement
 	= _ ";"
 		{ return { location, type: "NullStatement" }; }
+	/ using_statement
 	/ assignment_statement
 	/ function_call
 	/ label_statement
@@ -77,7 +78,6 @@ statement
 	/ function_statement
 	/ local_statement
 	/ return_statement
-	/ using_statement
 
 return_statement
 	= _ "return" wordbreak value:(!assignment_statement e:expression_list { return e; })?
