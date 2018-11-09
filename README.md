@@ -25,7 +25,9 @@ npm install https://github.com/asterick/tiko.git
 
 To run, simply use the `npx` command
 
-> npx tiko -h
+```
+npx tiko -h
+```
 
 ## Running Tiko
 
@@ -41,13 +43,16 @@ and insert them itself, so it is simply syntax sugar.
 ### Modules
 
 Tiko supports modules with private namespaces, by way of the `using` operation.  The using operation takes a single
-argument, either a string or an identifier, which specifies the file name of the source for this module.  Identifiers
-are unquoted, and will simply adopt the file extension of the module loading the file.  For more fine tuned support,
+argument, either a string or an identifier, which specifies the file name of the source for this module.  If no extension is specified, tiko will simply adopt the file extension of the module loading the file.  For more fine tuned support,
 a string can use used to specify the qualified path (relative to the loading source) of the module to be loaded
 
 A name for the module may also be supplied by appending a valid variable name after the directive
 
-> using "subdir/utils.lua" as utils
+```
+using "subdir/utils.lua" as utils
+```
+
+If no name is specified, the module will be identified by the file name, minus the extension.
 
 All globals defined in a referenced module by be read, modified or replaced by simply accessing it as a property
 object `utils.global_prop += 9`
@@ -81,9 +86,11 @@ The Pico-8 requires that certain calls be created in the global namespace in ord
 
 This is accomplished by applying the `fixed` keyword before a function name to lock the name of this defintion down.
 
-> fixed function _draw()
-> circfill(64, 64, 32, 100)
-> end
+```
+fixed function _draw()
+circfill(64, 64, 32, 100)
+end
+```
 
 Any function without the fixed keyword will be mangled
 
