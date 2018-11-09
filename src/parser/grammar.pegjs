@@ -8,7 +8,7 @@
 		"false", "for", "function", "goto", "local", "nil", 
 		"not", "or", "repeat", "return", "then", "true", 
 		"until", "while", "if", "in",
-		"inline", "virtual", "using", "as"
+		"inline", "virtual", "using", "as", "fixed", "assume"
 	];
 
 	const ASSIGNMENT_TYPES = {
@@ -64,6 +64,7 @@ statement
 	= _ ";"
 		{ return { location, type: "NullStatement" }; }
 	/ using_statement
+	/ assume_statement
 	/ assignment_statement
 	/ function_call
 	/ label_statement
@@ -142,6 +143,10 @@ function_statement
 local_statement
 	= _ "local" wordbreak variables:name_list expressions:(_ "=" e:expression_list { return e; })?
 		{ return { location, type: "LocalDeclaration", variables, expressions }; }
+
+assume_statement
+	= _ "assume" wordbreak names:name_list
+		{ return { location, type: "AssumeDeclaration", names }}
 
 using_statement
 	= _ "using" wordbreak module:(name / string) name:(_ "as" wordbreak name:name { return name })?
@@ -302,6 +307,8 @@ call_option
 		{ return { inline: true } }
 	/ _ "local" wordbreak
 		{ return { local: true } }
+	/ _ "fixed" wordbreak
+		{ return { fixed: true } }
 
 call_options
 	= options:call_option*
