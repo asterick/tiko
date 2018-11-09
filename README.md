@@ -19,13 +19,17 @@
 
 Once node is installed on your machine, you simply have to install the package to your project folder (for ease of use).  
 
-```npm install https://github.com/asterick/tiko.git
+```
+npm install https://github.com/asterick/tiko.git
 ```
 
 To run, simply use the `npx` command
 
-```npx tiko -h
-```
+> npx tiko -h
+
+## Running Tiko
+
+**TODO**
 
 ## Language extensions
 ### Read-modify-write operations
@@ -77,13 +81,12 @@ The Pico-8 requires that certain calls be created in the global namespace in ord
 
 This is accomplished by applying the `fixed` keyword before a function name to lock the name of this defintion down.
 
-```fixed function _draw()
-  circfill(64, 64, 32, 100)
-end
-```
+> fixed function _draw()
+> circfill(64, 64, 32, 100)
+> end
 
 Any function without the fixed keyword will be mangled
 
 ## Importing game data
 
-TODO
+**TODO**
