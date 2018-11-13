@@ -8,7 +8,14 @@ function inflate(index, base_tbl, ins_tbl)
 		return out
 	end
 
-	local function make_tbl(lens)
+	local function make_tbl(lens, count, width, ...)
+		if count then 
+			for k = 1, count do
+			 	add(lens, width)
+			end 
+			return def_tbl(lens, ...)
+		end
+
 		local idx, out = 0, {}
 		for b = 0, 15 do
 			for c = 0, 287 do
@@ -20,16 +27,6 @@ function inflate(index, base_tbl, ins_tbl)
 			idx *= 2
 		end
 		return out
-	end
-
-	local function def_tbl(x, count, width, ...)
-		if count then 
-			for k = 1, count do
-			 	add(x, width)
-			end 
-			return def_tbl(x, ...)
-		end
-		return make_tbl(x)
 	end
 
 	local function get_code(table)
@@ -58,8 +55,8 @@ function inflate(index, base_tbl, ins_tbl)
 
 		if method == 1 then
 			-- these are special ones
-			base_tbl = def_tbl({}, 144, 8, 112, 9, 24, 7, 8, 8)
-			ins_tbl = def_tbl({}, 32, 5)
+			base_tbl = make_tbl({}, 144, 8, 112, 9, 24, 7, 8, 8)
+			ins_tbl = make_tbl({}, 32, 5)
 		elseif method == 2 then
 			-- create dynamic table
 			base_tbl, ins_tbl, hf_tbl = 257 + bits(5), 1 + bits(5), {}
