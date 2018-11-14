@@ -43,7 +43,7 @@ and insert them itself, so it is simply syntax sugar.
 ### Modules
 
 Tiko supports modules with private namespaces, by way of the `using` operation.  The using operation takes a single
-argument, either a string or an identifier, which specifies the file name of the source for this module.  If no extension is specified, tiko will simply adopt the file extension of the module loading the file.  For more fine tuned support,
+argument, either a string or an identifier, which specifies the file name of the source for this module.  If no extension is specified, tiko will simply assume you wish to use the extension `.lua`.  For more fine tuned support,
 a string can use used to specify the qualified path (relative to the loading source) of the module to be loaded
 
 A name for the module may also be supplied by appending a valid variable name after the directive

@@ -372,7 +372,6 @@ string
 	= value:string_literal
 		{ return { location, type: "StringConstant", value }; }
 
-
 string_literal
 	= _ v:multiline
 		{ return v; }
