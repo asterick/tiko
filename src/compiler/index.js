@@ -7,9 +7,12 @@ const SEARCH_PATHS = process.env.SEARCH_PATHS
 	? process.env.SEARCH_PATHS.split(",")
 	: [path.resolve(__dirname, "../../stdlib")];
 
+const EXTENSIONS = ['', '.lua'];
+
 class Module {
 	constructor(ast) {
 		this._ast = ast;
+
 		console.log(ast);
 	}
 
@@ -34,34 +37,26 @@ class CompilerContext {
 	import (fn, root) {
 		root = root || process.cwd();
 
-		// Assumed extension
-		if (!path.extname(fn)) {
-			fn += ".lua";
-		}
-
 		// Attempt to locate module
-		const qualified = [root].concat(SEARCH_PATHS).reduce((acc, dir) => {
-			if (acc) return acc;
+		for (let dir of [root].concat(SEARCH_PATHS)) {
+			for (let extension of EXTENSIONS) {
+				const qualified = path.resolve(dir, `${fn}${extension}`);
 
-			const target = path.resolve(dir, fn);
+				try {
+					const stat = fs.statSync(qualified);
 
-			try {
-				const stat = fs.statSync(target);
-				return target;
-			} catch(e) {
-				return null;
+					if (this._modules[qualified] !== undefined) {
+						return this._modules[qualified];
+					}
+
+					return this._modules[qualified] = Module.fromFile(qualified);
+				} catch(e) {
+					continue ;
+				}
 			}
-		}, null);
-
-		if (qualified === null) {
-			throw new Error(`Could not resolve: ${fn}`);
 		}
 
-		if (this._modules[qualified] !== undefined) {
-			return this._modules[qualified];
-		}
-
-		return this._modules[qualified] = Module.fromFile(qualified);
+		throw new Error(`Could not resolve: ${fn}`);
 	}
 }
 
