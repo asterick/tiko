@@ -5,7 +5,7 @@ const path = require("path");
 const { version } = require(path.join(__dirname, "../package.json"));
 const { ArgumentParser } = require("argparse");
 
-const compiler = require("../src");
+const tiko = require("../src");
 
 const parser = new ArgumentParser({
 	description: 'Argparse example',
@@ -20,6 +20,15 @@ parser.addArgument(
 		nargs: "+"
 	}
 );
+
+parser.addArgument(
+	['-l', '--logging'],
+	{
+		nargs: 1,
+		help: "logging level",
+		defaultValue: 'info'
+	}
+)
 
 parser.addArgument(
 	['-r', '--run'],
@@ -40,7 +49,7 @@ parser.addArgument(
 	['-f', '--format'],
 	{
 		help: "desired output format",
-		choices: Object.keys(compiler.encoders),
+		choices: Object.keys(tiko.encoders),
 		defaultValue: "png"
 	}
 );
@@ -48,4 +57,9 @@ parser.addArgument(
 const args = parser.parseArgs();
 
 // Temporary code
-compiler.compile(args.files);
+try {
+	tiko.logging.level = args.logging;
+	const program = tiko.compile(args.files);
+} catch(e) {
+	tiko.logging.log('error', e.message);
+}

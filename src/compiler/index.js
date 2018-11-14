@@ -1,13 +1,7 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
 
+const locate = require("./locate");
 const parser = require("../parser");
-
-const SEARCH_PATHS = process.env.SEARCH_PATHS
-	? process.env.SEARCH_PATHS.split(",")
-	: [path.resolve(__dirname, "../../stdlib")];
-
-const EXTENSIONS = ['', '.lua'];
 
 class Module {
 	constructor(ast) {
@@ -35,28 +29,7 @@ class CompilerContext {
 	}
 
 	import (fn, root) {
-		root = root || process.cwd();
-
-		// Attempt to locate module
-		for (let dir of [root].concat(SEARCH_PATHS)) {
-			for (let extension of EXTENSIONS) {
-				const qualified = path.resolve(dir, `${fn}${extension}`);
-
-				try {
-					const stat = fs.statSync(qualified);
-
-					if (this._modules[qualified] !== undefined) {
-						return this._modules[qualified];
-					}
-
-					return this._modules[qualified] = Module.fromFile(qualified);
-				} catch(e) {
-					continue ;
-				}
-			}
-		}
-
-		throw new Error(`Could not resolve: ${fn}`);
+		Module.fromFile(locate(fn, root));
 	}
 }
 
