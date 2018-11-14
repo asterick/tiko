@@ -4,35 +4,28 @@ const locate = require("./locate");
 const parser = require("../parser");
 
 class Module {
-	constructor(ast) {
-		this._ast = ast;
+	constructor(fn) {
+		this.path = fn;
+		this.source = fs.readFileSync(fn, 'utf-8');
 
-		console.log(ast);
-	}
-
-	static fromFile(fn) {
-		const mod = Module.fromSource(fs.readFileSync(fn, 'utf-8'));
-		mod._path = fn;
-		return mod;
-	}
-
-	static fromSource(src) {
-		return new Module(parser.parse(src));
+		try {
+			this.ast = parser.parse(this.source);
+		} catch(e) {
+			e.module = this;
+			throw e;
+		}
 	}
 }
 
 class CompilerContext {
-	constructor(loader) {
-		this._loader = loader;
-
+	constructor() {
 		this._modules = {};
 	}
 
 	import (fn, root) {
-		Module.fromFile(locate(fn, root));
+		const path = locate(fn, root);
+		this._modules[path] = new Module(path);
 	}
 }
 
-module.exports = {
-	CompilerContext	
-}
+module.exports = CompilerContext;

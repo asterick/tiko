@@ -1,2 +1,3 @@
 *.p8.png
 node_modules
+.vscode
