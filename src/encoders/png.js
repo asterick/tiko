@@ -1,6 +1,8 @@
-const { PNG } = require('pngjs'),
-	  fs = require('fs');
+const logging = require('../logging');
+const { PNG } = require('pngjs');
+const fs = require('fs');
 
+// Character set used for png text compression
 const CHARACTER_SET = "\n 0123456789abcdefghijklmnopqrstuvwxyz!#%(){}[]<>+=/*:;.,~_";
 
 function compress(string) {
@@ -57,8 +59,8 @@ module.exports = function(fn, runtime, payload) {
 
 	runtime = compress(runtime);
 
-	console.log("Runtime size:", runtime.length);
-	console.log("Payload size:", payload.length);
+	log.silly(`Runtime size: ${runtime.length}`);
+	log.silly(`Payload size: ${payload.length}`);
 
 	if (payload.length > 0x4300 || 
 		runtime.length > (0x8000 - 0x4300)) {

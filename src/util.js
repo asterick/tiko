@@ -3,18 +3,13 @@ const logging = require("./logging");
 const colors = require('colors/safe');
 
 function formatError(e) {
-	const error = [];
-
-	if (!e.module || !e.location) {
-		error.push(`${e.name}: ${e.message}`);
-	} else {
-		error.push(`${e.name} ${e.module.path}(${e.location.start.line}:${e.location.start.column}): ${e.message}`)
-	}
-
+	const error = [`${e.name}: ${e.message}`];
 
 	if (e.module && e.location) {
 		const lines = e.module.source.split(/\r\n?|\n/g)
 		const { start, end } = e.location;
+
+		error.push(`\n${e.module.path}(${start.line}:${start.column})`)
 
 		for (var i = Math.max(1, start.line - 1); i <= Math.min(end.line + 1, lines.length); i++) {
 			const text = lines[i - 1] + " ";

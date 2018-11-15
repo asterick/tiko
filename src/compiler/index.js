@@ -2,6 +2,7 @@ const fs = require('fs');
 
 const locate = require("./locate");
 const parser = require("../parser");
+const logging = require("../logging");
 
 class Module {
 	constructor(fn) {
@@ -14,6 +15,8 @@ class Module {
 			e.module = this;
 			throw e;
 		}
+
+		console.log(this.ast);
 	}
 }
 
@@ -24,7 +27,11 @@ class CompilerContext {
 
 	import (fn, root) {
 		const path = locate(fn, root);
-		this._modules[path] = new Module(path);
+
+		logging.silly(`${root} ${fn} located at ${path}`);
+
+		return this._modules[path] = this._modules[path]
+			|| new Module(path);
 	}
 }
 
