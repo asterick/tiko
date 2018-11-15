@@ -15,8 +15,6 @@ class Module {
 			e.module = this;
 			throw e;
 		}
-
-		console.log(this.ast);
 	}
 }
 
@@ -28,7 +26,7 @@ class CompilerContext {
 	import (fn, root) {
 		const path = locate(fn, root);
 
-		logging.silly(`${root} ${fn} located at ${path}`);
+		logging.silly(`${fn}: loading from ${path}`);
 
 		return this._modules[path] = this._modules[path]
 			|| new Module(path);
