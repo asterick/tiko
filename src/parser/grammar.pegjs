@@ -8,40 +8,40 @@
 		"false", "for", "function", "goto", "local", "nil", 
 		"not", "or", "repeat", "return", "then", "true", 
 		"until", "while", "if", "in",
-		"inline", "virtual", "using", "as", "fixed", "assume"
+		"global", "inline", "virtual", "using", "as"
 	];
 
 	const ASSIGNMENT_TYPES = {
-		"+=": "AddOperator",
-		"-=": "SubtractOperator",
-		"*=": "MultiplyOperator",
-		"/=": "DivideOperator",
-		"%=": "ModuloOperator"
+		"+=": "Add",
+		"-=": "Subtract",
+		"*=": "Multiply",
+		"/=": "Divide",
+		"%=": "Modulo"
 	};
 
 	const BINARY_OPERATOR_TYPES = {
-		"or": "LogicalOrOperator",
-		"and": "LogicalAndOperator",
-		"<": "LessThanCompareOperator",
-		">": "GreaterThanCompareOperator",
-		"<=": "LessThanEqualCompareOperator",
-		">=": "GreaterThanEqualCompareOperator",
-		"~=": "NotEqualCompareOperator",
-		"!=": "NotEqualCompareOperator",
-		"==": "EqualCompareOperator",
-		"..": "ConcatinateOperator",
-		"+": "AddOperator",
-		"-": "SubtractOperator",
-		"*": "MultiplyOperator",
-		"/": "DivideOperator",
-		"%": "ModuloOperator",
-		"^": "PowerOperator"
+		"or": "LogicalOr",
+		"and": "LogicalAnd",
+		"<": "LessThanCompare",
+		">": "GreaterThanCompare",
+		"<=": "LessThanEqualCompare",
+		">=": "GreaterThanEqualCompare",
+		"~=": "NotEqualCompare",
+		"!=": "NotEqualCompare",
+		"==": "EqualCompare",
+		"..": "Concatinate",
+		"+": "Add",
+		"-": "Subtract",
+		"*": "Multiply",
+		"/": "Divide",
+		"%": "Modulo",
+		"^": "Power"
 	};
 
 	const UNARY_OPERATOR_TYPES = {
-		"not": "LogicalNotOperator",
-		"#": "LengthOperator",
-		"-": "NegateOperator",
+		"not": "LogicalNot",
+		"#": "Length",
+		"-": "Negate"
 	};
 
 	function associate(key, alters) {
@@ -52,7 +52,7 @@
 	}
 }
 
-chunk
+program
 	= block:block _
 		{ return block; }
 
@@ -64,7 +64,6 @@ statement
 	= _ ";"
 		{ return { location, type: "NullStatement" }; }
 	/ using_statement
-	/ assume_statement
 	/ assignment_statement
 	/ function_call
 	/ label_statement
@@ -99,7 +98,7 @@ assignment_statement
 				type:  "AssignmentStatement",
 				variables: [left], 
 				expressions: [
-					{ type: ASSIGNMENT_TYPES[o], left, right, location }
+					{ type: "BinaryOperator", op: ASSIGNMENT_TYPES[o], left, right, location }
 				]
 			}
 		}
@@ -143,10 +142,6 @@ function_statement
 local_statement
 	= _ "local" wordbreak variables:name_list expressions:(_ "=" e:expression_list { return e; })?
 		{ return { location, type: "LocalDeclaration", variables, expressions }; }
-
-assume_statement
-	= _ "assume" wordbreak names:name_list
-		{ return { location, type: "AssumeDeclaration", names }}
 
 using_statement
 	= _ "using" wordbreak module:(name / string) name:(_ "as" wordbreak name:name { return name })?
@@ -196,17 +191,17 @@ expression
 	= or_expression
 
 or_expression
-	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ and_expression
 
 and_expression
-	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ compare_expression
 
 compare_expression
-	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ concat_expression
 
@@ -216,23 +211,23 @@ concat_expression
 	/ add_expression
 
 add_expression
-	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ multiply_expression
 
 multiply_expression
-	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location, type: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ unary_expression
 
 unary_expression
 	= _ t:("#" / "-" / $("not" wordbreak)) expression:unary_expression
-		{ return { location, type: UNARY_OPERATOR_TYPES[t], expression }; }
+		{ return { location, type: "UnaryOperator", op: UNARY_OPERATOR_TYPES[t], expression }; }
 	/ power_expression
 
 power_expression
 	= left:top_expression _ t:"^" right:power_expression
-		{ return { location, type: BINARY_OPERATOR_TYPES[t], left, right }; }
+		{ return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], left, right }; }
 	/ top_expression
 
 top_expression
@@ -305,10 +300,10 @@ call_option
 		{ return { virtual: true } }
 	/ _ "inline" wordbreak
 		{ return { inline: true } }
+	/ _ "global" wordbreak
+		{ return { global: true } }
 	/ _ "local" wordbreak
 		{ return { local: true } }
-	/ _ "fixed" wordbreak
-		{ return { fixed: true } }
 
 call_options
 	= options:call_option*

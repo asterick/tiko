@@ -84,15 +84,15 @@ it by reference will result in a native call being created
 
 The Pico-8 requires that certain calls be created in the global namespace in order for proper timing to be established.
 
-This is accomplished by applying the `fixed` keyword before a function name to lock the name of this defintion down.
+This is accomplished by applying the `global` keyword before a function name to lock the name of this defintion down.
 
 ```
-fixed function _draw()
+global function _draw()
 circfill(64, 64, 32, 100)
 end
 ```
 
-Any function without the fixed keyword will be mangled
+Any function name without the global keyword will be mangled
 
 ## Importing game data
 
