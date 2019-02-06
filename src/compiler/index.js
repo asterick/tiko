@@ -27,7 +27,7 @@ function locate(fn, root) {
 		}
 	}
 
-	throw new Error(`Could not resolve: ${fn}`);
+	throw new Error(`Could not resolve module: ${fn}`);
 }
 
 class Module {
@@ -40,7 +40,16 @@ class Module {
 			const { imports, body } = parser.parse(this.source);
 
 			this.body = body;
-			this.imports = imports.map(name => ctx.import(name, this.path));
+			this.imports = imports.map(module => {
+				try {
+					return ctx.import(module.path, this.path);
+				} catch(e) {
+					e.location = module.location;
+					e.module = this;
+
+					throw e;
+				}
+			});
 		} catch(e) {
 			e.module = this;
 			throw e;
