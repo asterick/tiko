@@ -64,7 +64,7 @@ block
 /* Statements */
 statement
 	= _ ";"
-		{ return { location, type: "NullStatement" }; }
+		{ return { location: location(), type: "NullStatement" }; }
 	/ using_statement
 	/ assignment_statement
 	/ function_call
@@ -83,20 +83,20 @@ statement
 
 return_statement
 	= _ "return" wordbreak value:(!assignment_statement e:expression_list { return e; })?
-		{ return { location, type:"ReturnStatement", value }; }
+		{ return { location: location(), type:"ReturnStatement", value }; }
 
 label_statement
 	= _ "::" label:name _ "::"
-		{ return { location, type:"LabelStatement", label }; }
+		{ return { location: location(), type:"LabelStatement", label }; }
 
 assignment_statement
 	= variables:variable_list _ "=" expressions:expression_list
-		{ return { location, type:"AssignmentStatement", variables, expressions }; }
+		{ return { location: location(), type:"AssignmentStatement", variables, expressions }; }
 
 	/ left:variable _ o:("+=" / "-=" / "*=" / "%=" / "/=") right:expression
 		{
 			return { 
-				location, 
+				location: location(), 
 				type:  "AssignmentStatement",
 				variables: [left], 
 				expressions: [
@@ -107,70 +107,70 @@ assignment_statement
 
 break_statement
 	= _ "break" wordbreak
-		{ return { location, type:"BreakStatement" }; }
+		{ return { location: location(), type:"BreakStatement" }; }
 
 goto_statement
 	= _ "goto" wordbreak label:name
-		{ return { location, type:"GotoStatement", label }; }
+		{ return { location: location(), type:"GotoStatement", label }; }
 
 do_statement
 	= _ "do" wordbreak body:block _ "end" wordbreak
-		{ return { location, type:"BlockStatement", body }; }
+		{ return { location: location(), type:"BlockStatement", body }; }
 
 while_statement
 	= _ "while" wordbreak condition:expression body:do_statement
-		{ return { location, type:"WhileStatement", condition, body }; }
+		{ return { location: location(), type:"WhileStatement", condition, body }; }
 
 repeat_statement
 	= _ "repeat" wordbreak body:block _ "until" wordbreak condition:expression
-		{ return { location, type:"RepeatStatement", condition, body }; }
+		{ return { location: location(), type:"RepeatStatement", condition, body }; }
 
 if_statement
 	= if_clause:if_block elseif_clauses:elseif_block* else_clause:else_block? _ "end" wordbreak
-		{ return { location, type: "IfStatement", if_clause, elseif_clauses, else_clause } }
+		{ return { location: location(), type: "IfStatement", if_clause, elseif_clauses, else_clause } }
 
 for_statement
 	= _ "for" wordbreak name:name _ "=" start:expression _ "," end:expression increment:(_ "," i:expression { return i; })? body:do_statement
-		{ return { location, type: "ForStatement", name, start, end, increment, body }; }
+		{ return { location: location(), type: "ForStatement", name, start, end, increment, body }; }
 
 for_in_statement
 	= _ "for" wordbreak names:name_list _ "in" wordbreak values:expression_list body:do_statement
-		{ return { location, type: "ForInStatement", names, values, body }; }
+		{ return { location: location(), type: "ForInStatement", names, values, body }; }
 
 function_statement
 	= options:call_options _ "function" wordbreak wordbreak name:function_name body:function_body
-		{ return { location, type: "FunctionDeclaration", name, body,  ... options }; }
+		{ return { location: location(), type: "FunctionDeclaration", name, body,  ... options }; }
 
 local_statement
 	= _ "local" wordbreak variables:name_list expressions:(_ "=" e:expression_list { return e; })?
-		{ return { location, type: "LocalDeclaration", variables, expressions }; }
+		{ return { location: location(), type: "LocalDeclaration", variables, expressions }; }
 
 using_statement
 	= _ "using" wordbreak module:name name:(_ "as" wordbreak name:name { return name })?
 		{ 
-			imports.push(module.name);
+			imports.push({ path: module.name, location: location() });
 
-			return { location, type: "UsingDeclaration", module, name }
+			return { location: location(), type: "UsingDeclaration", module, name }
 		}
 	/ _ "using" wordbreak module:string name:(_ "as" wordbreak name:name { return name })?
 		{
-			imports.push(module.value);
+			imports.push({ path: module.value, location: location() });
 
-			return { location, type: "UsingDeclaration", module, name }
+			return { location: location(), type: "UsingDeclaration", module, name }
 		}
 
 /* Blocks */
 if_block
 	= _ "if" wordbreak condition:expression _ "then" wordbreak body:block 
-		{ return { location, type: "IfClause", condition, body } }
+		{ return { location: location(), type: "IfClause", condition, body } }
 
 elseif_block
 	= _ "elseif" wordbreak condition:expression _ "then" wordbreak body:block 
-		{ return { location, type: "ElseIfClause", condition, body } }
+		{ return { location: location(), type: "ElseIfClause", condition, body } }
 
 else_block
 	= _ "else" wordbreak body:block 
-		{ return { location, type: "ElseClause", body } }
+		{ return { location: location(), type: "ElseClause", body } }
 
 /* Lists */
 variable_list
@@ -187,9 +187,9 @@ expression_list
 
 parameter_list
 	= parameters:name_list rest:(_ "," _ rest:"...")?
-		{ return { location, type:"ParameterList", rest: Boolean(rest), parameters }; }
+		{ return { location: location(), type:"ParameterList", rest: Boolean(rest), parameters }; }
 	/ _ "..."
-		{ return { location, type:"ParameterList", rest: true, parameters: [] }; }
+		{ return { location: location(), type:"ParameterList", rest: true, parameters: [] }; }
 
 field_list
 	= a:field b:(field_seperator c:field { return c; })* field_seperator?
@@ -203,68 +203,68 @@ expression
 	= or_expression
 
 or_expression
-	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:and_expression o:(_ t:"or" wordbreak b:and_expression { return { location: location(), type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ and_expression
 
 and_expression
-	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:compare_expression o:(_ t:"and" wordbreak b:compare_expression { return { location: location(), type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ compare_expression
 
 compare_expression
-	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:concat_expression o:(_ t:("<=" / ">=" / "<" / ">" / "~=" / "!=" / "==") b:concat_expression { return { location: location(), type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ concat_expression
 
 concat_expression
 	= left:add_expression _ t:".." right:concat_expression
-		{ return { location, type: BINARY_OPERATOR_TYPES[t], left, right }; }
+		{ return { location: location(), type: BINARY_OPERATOR_TYPES[t], left, right }; }
 	/ add_expression
 
 add_expression
-	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:multiply_expression o:(_ t:("+" / "-") b:multiply_expression { return { location: location(), type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ multiply_expression
 
 multiply_expression
-	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
+	= a:unary_expression o:(_ t:("*" / "/" / "%") b:unary_expression { return { location: location(), type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], right: b } })+
 		{ return associate("left", [a].concat(o)); }
 	/ unary_expression
 
 unary_expression
 	= _ t:("#" / "-" / $("not" wordbreak)) expression:unary_expression
-		{ return { location, type: "UnaryOperator", op: UNARY_OPERATOR_TYPES[t], expression }; }
+		{ return { location: location(), type: "UnaryOperator", op: UNARY_OPERATOR_TYPES[t], expression }; }
 	/ power_expression
 
 power_expression
 	= left:top_expression _ t:"^" right:power_expression
-		{ return { location, type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], left, right }; }
+		{ return { location: location(), type: "BinaryOperator", op: BINARY_OPERATOR_TYPES[t], left, right }; }
 	/ top_expression
 
 top_expression
 	= _ "nil" wordbreak
-		{ return { location, type: "NilConstant" }; }
+		{ return { location: location(), type: "NilConstant" }; }
 	/ _ "false" wordbreak
-		{ return { location, value: false, type: "BooleanConstant" }; }
+		{ return { location: location(), value: false, type: "BooleanConstant" }; }
 	/ _ "true" wordbreak
-		{ return { location, value: true, type: "BooleanConstant" }; }
+		{ return { location: location(), value: true, type: "BooleanConstant" }; }
 	/ _ "..."
-		{ return { location, type: "RestArgument" }; }
+		{ return { location: location(), type: "RestArgument" }; }
 	/ value:number
-		{ return { location, type: "NumberConstant", value }; }
+		{ return { location: location(), type: "NumberConstant", value }; }
 	/ value:string
-		{ return { location, type: "StringConstant", value }; }
+		{ return { location: location(), type: "StringConstant", value }; }
 	/ value:function_definition
-		{ return { location, type: "LambdaFunction", value }; }
+		{ return { location: location(), type: "LambdaFunction", value }; }
 	/ table_constructor
 	/ prefix_expression
 
 index_expression
 	= _ "." name:name
-		{ return { location, type: "PropertyIndex", name } }
+		{ return { location: location(), type: "PropertyIndex", name } }
 	/ _ "[" value:expression _ "]"
-		{ return { location, type: "ExpressionIndex", value } }
+		{ return { location: location(), type: "ExpressionIndex", value } }
 
 group_expression
 	= _ "(" expression:expression _ ")"
@@ -276,9 +276,9 @@ base_expression
 
 call_expression
 	= a:arguments
-		{ return { location, type: "FunctionCall", arguments:a } }
+		{ return { location: location(), type: "FunctionCall", arguments:a } }
 	/ _ ":" name:name a:arguments
-		{ return { location, type: "PropertyCall", name, arguments:a } }
+		{ return { location: location(), type: "PropertyCall", name, arguments:a } }
 
 modifier_expression
 	= index_expression
@@ -301,11 +301,11 @@ function_call
 /* Atomic types */
 field
 	= _ "[" key:expression _ "]" _ "=" value:expression
-		{ return { location, type: "ExpressionField", key, value }; }
+		{ return { location: location(), type: "ExpressionField", key, value }; }
 	/ name:name _ "=" value:expression
-		{ return { location, type: "IdentifierField", name, value }; }
+		{ return { location: location(), type: "IdentifierField", name, value }; }
 	/ value:expression
-		{ return { location, type: "ValueField", value }; }
+		{ return { location: location(), type: "ValueField", value }; }
 
 call_option
 	= _ "virtual" wordbreak
@@ -323,14 +323,14 @@ call_options
 
 function_definition
 	= options:call_options _ "function" wordbreak body:function_body
-		{ return { location, type: "LambdaFunctionDeclaration", body, ... options }; }
+		{ return { location: location(), type: "LambdaFunctionDeclaration", body, ... options }; }
 
 function_name
 	= a:name b:(_ "." b:name { return b; })* c:(_ ":" c:name { return c; })?
 		{ 
 			var names = [a].concat(b);
 			return { 
-				location, type: "FunctionName", 
+				location: location(), type: "FunctionName", 
 				names: c ? names.concat(c) : names, 
 				self: Boolean(c)
 			}; 
@@ -338,7 +338,7 @@ function_name
 
 function_body
 	= _ "(" parameters:parameter_list? _ ")" body:block _ "end" wordbreak
-		{ return { location, type: "FunctionBody", parameters, body }; }
+		{ return { location: location(), type: "FunctionBody", parameters, body }; }
 
 arguments
 	= _ "(" l:expression_list? _ ")"
@@ -348,7 +348,7 @@ arguments
 
 table_constructor
 	= _ "{" fields:field_list? _ "}"
-		{ return { location, type: "TableConstructor", fields }; }
+		{ return { location: location(), type: "TableConstructor", fields }; }
 
 /* These are helpers */
 _
@@ -359,7 +359,7 @@ wordbreak
 
 name
 	= _ name:$([a-z_]i [a-z0-9_]i*) !{ return RESERVED.indexOf(name) >= 0 }
-		{ return { location, type: "Identifier", name }; }
+		{ return { location: location(), type: "Identifier", name }; }
 
 number
 	= _ "0x"i a:$[0-9a-f]i* "." b:$[0-9a-f]i* &{ return a.length || b.length }
@@ -377,7 +377,7 @@ number
 
 string
 	= value:string_literal
-		{ return { location, type: "StringConstant", value }; }
+		{ return { location: location(), type: "StringConstant", value }; }
 
 string_literal
 	= _ v:multiline
