@@ -31,13 +31,16 @@ function locate(fn, root) {
 }
 
 class Module {
-	constructor(fn) {
-		this.path = fn;
+	constructor(fn, ctx) {
+		this.path = path.dirname(fn);
+		this.name = fn;
 		this.source = fs.readFileSync(fn, 'utf-8');
 
 		try {
-			const ast = parser.parse(this.source);
-			this.process(ast);
+			const { imports, body } = parser.parse(this.source);
+
+			this.body = body;
+			this.imports = imports.map(name => ctx.import(name, this.path));
 		} catch(e) {
 			e.module = this;
 			throw e;
@@ -47,9 +50,7 @@ class Module {
 	process(ast, context) {
 		context = context || {};
 
-		ast.forEach((node) => {
-			console.log(node);
-		});
+		console.log(ast);
 	}
 }
 
@@ -61,10 +62,12 @@ class CompilerContext {
 	import (fn, root) {
 		const path = locate(fn, root);
 
+		console.log(path, root)
+
 		logging.silly(`${fn}: loading from ${path}`);
 
 		return this._modules[path] ||
-			(this._modules[path] = new Module(path));
+			(this._modules[path] = new Module(path, this));
 	}
 }
 

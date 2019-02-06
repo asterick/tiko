@@ -1,4 +1,4 @@
-function inflate(index, base_tbl, ins_tbl)
+function inflate(peek, index, base_tbl, ins_tbl)
 	local function bits(n)
 		local out = 0
 		for i = 0, n-1 do

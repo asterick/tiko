@@ -50,11 +50,13 @@
 			return k;
 		});
 	}
+
+	const imports = [];
 }
 
 program
-	= block:block _
-		{ return block; }
+	= body:block _
+		{ return { type: "Program", imports, body }; }
 
 block
 	= statements:statement*
@@ -144,8 +146,18 @@ local_statement
 		{ return { location, type: "LocalDeclaration", variables, expressions }; }
 
 using_statement
-	= _ "using" wordbreak module:(name / string) name:(_ "as" wordbreak name:name { return name })?
-		{ return { location, type: "UsingDeclaration", module, name } }
+	= _ "using" wordbreak module:name name:(_ "as" wordbreak name:name { return name })?
+		{ 
+			imports.push(module.name);
+
+			return { location, type: "UsingDeclaration", module, name }
+		}
+	/ _ "using" wordbreak module:string name:(_ "as" wordbreak name:name { return name })?
+		{
+			imports.push(module.value);
+
+			return { location, type: "UsingDeclaration", module, name }
+		}
 
 /* Blocks */
 if_block
